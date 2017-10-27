@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="View的基础View的位置参数表示位置的几种参数  left/right/top/bottom表示view（view最初的状态）距离ViewGroup的左上右下的距离 x/y 表示view（view的当前状态，平移后状态会变）的左上角的坐标，也是相对于ViewGroup的 translationX/translationY，表示view（view的当前状态，平移后状态会变）相对于ViewGrou">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android开发艺术（2）——View的事件体系">
+<meta property="og:url" content="http://yoursite.com/2016/12/03/Android开发艺术（2）——View的事件体系/index.html">
+<meta property="og:site_name" content="csy&#39;s Blog">
+<meta property="og:description" content="View的基础View的位置参数表示位置的几种参数  left/right/top/bottom表示view（view最初的状态）距离ViewGroup的左上右下的距离 x/y 表示view（view的当前状态，平移后状态会变）的左上角的坐标，也是相对于ViewGroup的 translationX/translationY，表示view（view的当前状态，平移后状态会变）相对于ViewGrou">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2017-10-27T13:19:09.757Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android开发艺术（2）——View的事件体系">
+<meta name="twitter:description" content="View的基础View的位置参数表示位置的几种参数  left/right/top/bottom表示view（view最初的状态）距离ViewGroup的左上右下的距离 x/y 表示view（view的当前状态，平移后状态会变）的左上角的坐标，也是相对于ViewGroup的 translationX/translationY，表示view（view的当前状态，平移后状态会变）相对于ViewGrou">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/12/03/Android开发艺术（2）——View的事件体系/"/>
+
+
+
+
+
+  <title>Android开发艺术（2）——View的事件体系 | csy's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">csy's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/12/03/Android开发艺术（2）——View的事件体系/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="csy">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="csy's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android开发艺术（2）——View的事件体系</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-12-03T21:17:47+08:00">
+                2016-12-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/阅读笔记/" itemprop="url" rel="index">
+                    <span itemprop="name">阅读笔记</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="View的基础"><a href="#View的基础" class="headerlink" title="View的基础"></a>View的基础</h2><h3 id="View的位置参数"><a href="#View的位置参数" class="headerlink" title="View的位置参数"></a>View的位置参数</h3><p>表示位置的几种参数</p>
+<ul>
+<li>left/right/top/bottom表示view（view最初的状态）距离ViewGroup的左上右下的距离</li>
+<li>x/y 表示view（view的当前状态，平移后状态会变）的左上角的坐标，也是相对于ViewGroup的</li>
+<li>translationX/translationY，表示view（view的当前状态，平移后状态会变）相对于ViewGroup的偏移量</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">width = right - left;</div><div class="line">x = left + translationX;</div></pre></td></tr></table></figure>
+<p><strong>注意</strong>：View的平移其实只是改变了x/y和translationX/translationY，left/right/top/bottom还是不变。</p>
+<p>x改变，如果left不变，translationX也会改变</p>
+<h3 id="MotionEvent和TouchSlop"><a href="#MotionEvent和TouchSlop" class="headerlink" title="MotionEvent和TouchSlop"></a>MotionEvent和TouchSlop</h3><ul>
+<li><p>MotionEvent</p>
+<p>  手指触摸（Down、Move、Up等）之后，会返回一个MotionEvent对象，通过它，可以拿到x、y（表示当前手指位置相对于被作用的控件——View或者Activity的坐标），rawX、rawY（表示当前手指位置相对于屏幕坐标）</p>
+</li>
+</ul>
+<ul>
+<li><p>TouchSlop</p>
+<p>  这是一个<strong>常量</strong>，根据设备不同而不同，系统推荐我们利用它作为一个临界点，如果手指滑动小于这个值，就认为没有滑动，这样可以提升用户体验，当然不用他来处理也无所谓(这一点可以在demo中体现，即使两次返回的MotionEvent的坐标差小于TouchSlop也是可以的)</p>
+</li>
+</ul>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">## VelocityTracker、GestureDetector和Scroller</div><div class="line">### VelocityTracker</div><div class="line">&gt; 可以称其为速度追踪器，就是获取手指滑动的速度的。当然在手机上，指的是一定时间内，手指划过的像素</div><div class="line">#### 使用：</div><div class="line">1. 首先需要在onTouchEvent中调用它，这样才能采集到手指在屏幕上的坐标变化信息</div><div class="line">2. 获取速度前需要先计算，传入时间，表示需要计算的时间长度</div><div class="line">3. 获取2传入的时长内滑过的像素，即使速度，不过这个速度的定义跟以往不同，只是像素长度而已</div><div class="line">4. 使用完后要释放</div><div class="line">#### 代码：</div><div class="line">java</div><div class="line">//初始化</div><div class="line">    VelocityTracker velocityTracker = VelocityTracker.obtain();</div><div class="line">//添加MotionEvent(在onTouchEvent中)</div><div class="line">    velocityTracker.addMovement(event);</div><div class="line">//计算速度 </div><div class="line">	velocityTracker.computeCurrentVelocity(30);</div><div class="line">//获取速度</div><div class="line">    velocityTracker.getXVelocity();</div><div class="line">//释放</div><div class="line">	velocityTracker.clear();</div><div class="line">	velocityTracker.recycle();</div></pre></td></tr></table></figure>
+<h3 id="GestureDetector"><a href="#GestureDetector" class="headerlink" title="GestureDetector"></a>GestureDetector</h3><p>手势监控，使用方式十分简单<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">//1.创建GestureDetector，注意只能在Looper Thread中使用，看源码可知，内部使用了handler</div><div class="line">gestureDetector = new GestureDetector(Context,GestureDetector.OnGestureListener);</div><div class="line">gestureDetector.setIsLongpressEnabled(false);//是否开启长按，如果开了，可以捕获到长按事件，但是长按后不可以捕获到滑动事件</div><div class="line">//2.在view的onThouchEvent中让它接管事件，然后根据他的返回值决定是否消费(return true)</div><div class="line">boolean resume = gestureDetector.onTouchEvent(event);</div><div class="line">return resume;</div><div class="line">//3.在OnGestureListener接口的各种方法就会被调用</div></pre></td></tr></table></figure></p>
+<p>这个类只是辅助类，帮助我们更容易的捕获到手势（双击、长按等，当然也可以自己写，也就是各种onTouchEvent中的处理）</p>
+<h3 id="Scroller"><a href="#Scroller" class="headerlink" title="Scroller"></a>Scroller</h3><p><strong>注意，Scroller实质是不断的调用scrollTo方法，所以就要了解scrollTo方法</strong></p>
+<p>scrollTo移动的是View的内容，所以，Scroller会给View的内容增加滚动效果</p>
+<p><strong>使用</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">//1.创建Scroller</div><div class="line">scroller = new Scroller(context);</div><div class="line">//2.重写View(需要滚动的东西所在的View，因为scrollTo滚动的是View的内容)的computeScroll方法 </div><div class="line">public void computeScroll() &#123;</div><div class="line">    if (scroller.computeScrollOffset()) &#123;//该次滚动是否执行完</div><div class="line">	scrollTo(scroller.getCurrX(),scroller.getCurrY());</div><div class="line">	//postInvalidate();//这里书上写错了（后来有纠正），不需要调用他，因为scrollTo之后就会自动重绘了，源码中可以看出</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line">//3.调用Scroller的startScroller方法</div><div class="line">scroller.startScroll(0,0,-10,-10,1000);</div><div class="line">invalidate();//注意调用之后还需要调用这个方法，让view重绘，具体原因之后Scroller原理的方法</div></pre></td></tr></table></figure>
+<h2 id="View的滑动"><a href="#View的滑动" class="headerlink" title="View的滑动"></a>View的滑动</h2><p>View滑动的三种方法：</p>
+<ul>
+<li>通过View的scrollBy、scrollTo（内容滚动）</li>
+<li>通过动画<ul>
+<li>补间动画（只是改变的影像）</li>
+<li>属性动画（3.0以上才行，3.0以下可以使用兼容库实现，但是本质还是补间动画。sh属性动画改变的就是属性了——translationX）</li>
+</ul>
+</li>
+<li>LayoutParams（得看你改变的是什么left、x、translationX都可以，效果不同）</li>
+</ul>
+<h3 id="ScrollTo-ScrollBy"><a href="#ScrollTo-ScrollBy" class="headerlink" title="ScrollTo/ScrollBy"></a>ScrollTo/ScrollBy</h3><p>scrollBy内部调用的是scrollTo，scrollTo其实就是修改mScrollX、mScrollY的值，然后调用invalidateParentCaches实现View的内容的位置改变</p>
+<p>mScrollX：View的左边缘距离内容的左边缘的距离，内容边缘在右边，mScrollX为负，反之为正（正好相反）</p>
+<h3 id="三种对比"><a href="#三种对比" class="headerlink" title="三种对比"></a>三种对比</h3><ul>
+<li>scrollTo/scrollBy：操作简单，适合对View的内容滑动</li>
+<li>动画：操作简单，可实现复杂动画效果</li>
+<li>layoutparams：操作复杂，可以满足各种需求</li>
+</ul>
+<h2 id="View的事件分发机制"><a href="#View的事件分发机制" class="headerlink" title="View的事件分发机制"></a>View的事件分发机制</h2><blockquote>
+<p>基于2.3的源码（先用的7.0、4.0的源码，有点难懂，2.3简单点了些）</p>
+</blockquote>
+<p>源码走起</p>
+<h3 id="ViewGroup"><a href="#ViewGroup" class="headerlink" title="ViewGroup"></a>ViewGroup</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div></pre></td><td class="code"><pre><div class="line">public boolean dispatchTouchEvent(MotionEvent ev) &#123;</div><div class="line">	//过滤一些“错误”的事件，直接return false,</div><div class="line">	if (!onFilterTouchEventForSecurity(ev)) &#123;</div><div class="line">            return false;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">  	//FLAG_DISALLOW_INTERCEPT(一个标记，表示是否需要拦截事件，</div><div class="line">  	//这个是由childView来设置，通过它可以使chilidView拥有控制parentView</div><div class="line">  	//是否拦截事件的权利。7.0的源码中，这个值会在ACTION_DOWN的时候重置，2.3</div><div class="line">  	//的源码中暂未找到。这个标记一般在onTouchEvent的ACTION_DOWN之后的事件</div><div class="line">  	//中设置，所以即使重置也无影响)</div><div class="line">    boolean disallowIntercept = (mGroupFlags &amp; FLAG_DISALLOW_INTERCEPT) != 0;</div><div class="line">	//针对down做一些处理</div><div class="line">    if (action == MotionEvent.ACTION_DOWN) &#123;</div><div class="line">    	if (mMotionTarget != null) &#123;</div><div class="line">    			// mMotionTarget是事件作用的View，down的时候，应该还没有它，</div><div class="line">    			// 这里不为空，所以是特殊情况，直接给他置空</div><div class="line">                // this is weird, we got a pen down, but we thought it was</div><div class="line">                // already down!</div><div class="line">                // XXX: We should probably send an ACTION_UP to the current</div><div class="line">                // target.</div><div class="line">                mMotionTarget = null;</div><div class="line">    	&#125;</div><div class="line">    	//childView不让parentView拦截  或者 自己的onInterceptTouchEvent返回false</div><div class="line">    	if(禁止拦截 或 !onInterceptTouchEvent(ev))&#123;</div><div class="line">        	//不拦截，那就找合适的childView(位置之类的满足条件的)，把事件分发给他们</div><div class="line">        	for(遍历childView)&#123;</div><div class="line">            	if(childView可接受事件——处于事件所在的坐标等条件满足)&#123;</div><div class="line">            		//分发给childView(childView可以为viewgroup也可以为View)</div><div class="line">            		//如果是viewGroup，就和现在分析的这套代码相同，否则稍后分析</div><div class="line">                	if (child.dispatchTouchEvent(ev))  &#123;</div><div class="line">                		//这个孩子处理了事件了(可能是他自己处理的，也可能是他的孩子处理的)</div><div class="line">						// Event handled, we have a target now.</div><div class="line">						//给mMotionTarget赋值，表示事件将作用于它(这个它其实是与其他的子View)</div><div class="line">						//做区分的，因为事件可能最终被它的几重孙子消费，但一定是这个孩子的子孙</div><div class="line">						//不会是它的兄弟们</div><div class="line">                        mMotionTarget = child;</div><div class="line">                        //既然处理了，作为父亲，也return true，跟上行注释类似，他也告诉</div><div class="line">                        //他的父亲，他处理了事件了(其实这里是他的孩子处理的)</div><div class="line">						return true;</div><div class="line">					&#125;</div><div class="line">					//这个孩子（或者孩子的孩子）没处理，那就分发给下一个孩子，只要有一个</div><div class="line">					//后代处理了，上面就会return true，当前我们所分析的这个View的任务就完成了</div><div class="line">            	&#125;</div><div class="line">        	&#125;</div><div class="line">        	//所有的孩子、孙子都没有处理，自己来处理</div><div class="line">    	&#125; </div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    //下面这两行代码&amp;看不太懂，反正就是改变了mGroupFlags，而mGroupFlags在前面获取disallowIntercept</div><div class="line">    //的时候用到过，再结合下面那个Note，再结合7.0源码中ACTION_DOWN后会重置FLAG_DISALLOW_INTERCEPT，</div><div class="line">    //所以这里的意思大致应该是：如果UP活着CANCEL,就设置mGroupFlags，这将导致下次DOWN后</div><div class="line">    //FLAG_DISALLOW_INTERCEPT变为“flase”，功能类似于7.0的重置</div><div class="line">    //突然想起《STL源码剖析》一书的扉页，侯捷先生只写了一句话：</div><div class="line">    //“源码之前，了无秘密”。</div><div class="line">    boolean isUpOrCancel = (action == MotionEvent.ACTION_UP) ||</div><div class="line">                (action == MotionEvent.ACTION_CANCEL);</div><div class="line">	if (isUpOrCancel) &#123;</div><div class="line">		// Note, we have already copied the previous state to our local</div><div class="line">		// variable, so this takes effect on the next event</div><div class="line">		mGroupFlags &amp;= ~FLAG_DISALLOW_INTERCEPT;</div><div class="line">	&#125;</div><div class="line">	//能走到这里有以下几种情况：</div><div class="line">	//1.是DOWN且target==null(是DOWN且child不处理)</div><div class="line">	//2.不是DOWN且target==null（自己处理）</div><div class="line">	//3.不是DOWN,target！=null(DOWN已经由child处理，这个事件不是DOWN，孩子、自己都可以处理)</div><div class="line">	</div><div class="line">	//如果target==null，说明没有childView要处理事件，交由自己处理</div><div class="line">	//如果target！=null，说明这个不是ACTION_DOWN且DOWN已经被child处理，这是一个非DOWN</div><div class="line">	final View target = mMotionTarget;</div><div class="line">	if(target == null)&#123;//没有childView处理</div><div class="line">    	//。。。</div><div class="line">    	//调用父类的dispatchTouchEvent(也就是这个ViewGroup当做普通View处理，自己处理事件)</div><div class="line">		return super.dispatchTouchEvent(ev);</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	</div><div class="line">	//能走到这里，根据前面那三条，不是DOWN，而且target不为空，也就是DOWN已经被孩子处理</div><div class="line">	//这里的第一个参数，子View调用requestDisallowIntercept一般就是为了在这里出效果</div><div class="line">	if (!disallowIntercept &amp;&amp; onInterceptTouchEvent(ev)) &#123;//要拦截了</div><div class="line">	//这个if一般是这样的：当子View上正在触发非DOWN(比如MOVE)事件，然后把该View，也就是这个</div><div class="line">	//子View的父亲的disallowIntercept改变了，就走到这里了，父亲就开始拦截，然后就像下面那样，</div><div class="line">	//给孩子分发一个CANCEL的事件，然后把mMotionTarget置为空，并且return true，当下个事件来到</div><div class="line">	//的时候，在上面那一步，target已经等于null了，这样这个ViewGroup就会自己去处理事件了，然后就</div><div class="line">	//走到onTouchEvent了，所以在这里if里面不用考虑onTouchEvent</div><div class="line">		ev.setAction(MotionEvent.ACTION_CANCEL);</div><div class="line">    	if (!target.dispatchTouchEvent(ev)) &#123;</div><div class="line">        	//这里是空的</div><div class="line">            //这里主要作用是：我要拦截了，那么我就给我的孩子分发一个事件，ACTION是ACTION_CANCEL</div><div class="line">		&#125;</div><div class="line">		//拦截了，以后不会让孩子去处理了，把mMotionTarget清空 </div><div class="line">		mMotionTarget = null;</div><div class="line">		return true;</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	if (isUpOrCancel) &#123;</div><div class="line">		mMotionTarget = null;</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	//把事件分发给孩子(如果return false，就会调用它父亲的这一行，一直往上，都是return false，</div><div class="line">	//最后就到了Activity了,下一段代码分析)</div><div class="line">	return target.dispatchTouchEvent(ev);	</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>前面说了，如果dispatchTouchEvent返回了false，会一直往上return，直到被Activity消费，上代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">Activity:</div><div class="line">public boolean dispatchTouchEvent(MotionEvent ev) &#123;</div><div class="line">    if (ev.getAction() == MotionEvent.ACTION_DOWN) &#123;</div><div class="line">        onUserInteraction();</div><div class="line">    &#125;</div><div class="line">    //window的superDispatchTouchEvent 如果return false，就往下走，调用了activity的onTouchEvent</div><div class="line">    if (getWindow().superDispatchTouchEvent(ev)) &#123;</div><div class="line">        return true;</div><div class="line">    &#125;</div><div class="line">    return onTouchEvent(ev);</div><div class="line">&#125;</div><div class="line">PhoneWindow：</div><div class="line">public boolean superDispatchTouchEvent(MotionEvent event) &#123;</div><div class="line">	//调了mDecor.superDispatchTouchEvent(event)</div><div class="line">	//其实就是ViewGroup的dispatchTouchEvent，回归到上一个代码分析了</div><div class="line">    return mDecor.superDispatchTouchEvent(event);</div><div class="line">&#125;</div><div class="line">综上，如果dispatchTouchEvent返回false，最终就会走到activity的onTouchEvent中</div></pre></td></tr></table></figure>
+<p>接下来分析View的dispatchTouchEvent</p>
+<h3 id="View"><a href="#View" class="headerlink" title="View"></a>View</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">//看着很简单</div><div class="line">public boolean dispatchTouchEvent(MotionEvent event) &#123;</div><div class="line">    if (!onFilterTouchEventForSecurity(event)) &#123;</div><div class="line">        return false;</div><div class="line">    &#125;</div><div class="line">    //有了onTouchListener,就执行onTouch，没有，或者return false，才会走onTouchEvent</div><div class="line">    if (mOnTouchListener != null &amp;&amp; (mViewFlags &amp; ENABLED_MASK) == ENABLED &amp;&amp;</div><div class="line">            mOnTouchListener.onTouch(this, event)) &#123;</div><div class="line">        return true;</div><div class="line">    &#125;</div><div class="line">    //其实onClick是在onTouchEvent中的，所以onTouch-&gt;onTouchEvent-&gt;onClick/onLongClick</div><div class="line">    return onTouchEvent(event);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<blockquote>
+<p>大家都知道事件分发机制搞清楚三个方法就ok了</p>
+</blockquote>
+<ul>
+<li><p>dispatchTouchEvent</p>
+<ul>
+<li>view 搞定</li>
+<li>viewGroup 搞定</li>
+</ul>
+</li>
+<li><p>onInterceptTouchEvent</p>
+<ul>
+<li>view 没有</li>
+<li>viewGroup 在dispatchTouchEvent源码中分析过了</li>
+</ul>
+</li>
+<li><p>onTouchEvent</p>
+<p>  接下来继续分析最后一个方法</p>
+</li>
+</ul>
+<h3 id="onTouchEvent"><a href="#onTouchEvent" class="headerlink" title="onTouchEvent"></a>onTouchEvent</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div></pre></td><td class="code"><pre><div class="line">//这个类的处理只存在于View中，用来处理事件(ViewGroup一般会把事件分发给孩子，让孩子来处理，如果自己处理</div><div class="line">//就通过super class来处理，也就是View，所以还是它)</div><div class="line">public boolean onTouchEvent(MotionEvent event) &#123;</div><div class="line">    final int viewFlags = mViewFlags;</div><div class="line">	//如果view是DISABLED，那么这个View不可以响应事件，即不可以对事件作出回应，但是他是会</div><div class="line">	//消耗事件的：1.CLICKABLE 2.LONG_CLICKABLE，这里直接根据这两个条件return，不论true or false</div><div class="line">    if ((viewFlags &amp; ENABLED_MASK) == DISABLED) &#123;</div><div class="line">        // A disabled view that is clickable still consumes the touch</div><div class="line">        // events, it just doesn not respond to them.</div><div class="line">        return (((viewFlags &amp; CLICKABLE) == CLICKABLE ||</div><div class="line">                (viewFlags &amp; LONG_CLICKABLE) == LONG_CLICKABLE));</div><div class="line">    &#125;</div><div class="line">	//委托给另一个View去处理？没用过</div><div class="line">    if (mTouchDelegate != null) &#123;</div><div class="line">        if (mTouchDelegate.onTouchEvent(event)) &#123;</div><div class="line">            return true;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">	//对事件处理，其实就是click和longclick(当然我们可以重写这个方法,但是对于view，系统</div><div class="line">	//只帮忙处理这两个，scrollview等都是重写的)</div><div class="line">    if (((viewFlags &amp; CLICKABLE) == CLICKABLE ||</div><div class="line">            (viewFlags &amp; LONG_CLICKABLE) == LONG_CLICKABLE)) &#123;</div><div class="line">        switch (event.getAction()) &#123;</div><div class="line">            case MotionEvent.ACTION_UP:</div><div class="line">            	//手指抬起，各种校验，最后决定调用点击、长按方法</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_DOWN:</div><div class="line">            	//按下</div><div class="line">                if (mPendingCheckForTap == null) &#123;</div><div class="line">                    mPendingCheckForTap = new CheckForTap();</div><div class="line">                &#125;</div><div class="line">                mPrivateFlags |= PREPRESSED;</div><div class="line">                mHasPerformedLongPress = false;</div><div class="line">                postDelayed(mPendingCheckForTap, ViewConfiguration.getTapTimeout());</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_CANCEL:</div><div class="line">            	//事件取消，就会remveXXCallBack(),还会</div><div class="line">                //refreshDrawableState();</div><div class="line">                mPrivateFlags &amp;= ~PRESSED;</div><div class="line">                refreshDrawableState();</div><div class="line">                removeTapCallback();</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_MOVE:</div><div class="line">            	//手指移出去（View的可点击范围），就会remveXXCallBack(),还会</div><div class="line">            	//refreshDrawableState();</div><div class="line">            	//...</div><div class="line">                if ((x &lt; 0 - slop) || (x &gt;= getWidth() + slop) ||</div><div class="line">                        (y &lt; 0 - slop) || (y &gt;= getHeight() + slop)) &#123;</div><div class="line">                    // Outside button</div><div class="line">                    removeTapCallback();</div><div class="line">                    if ((mPrivateFlags &amp; PRESSED) != 0) &#123;</div><div class="line">                        // Remove any future long press/tap checks</div><div class="line">                        removeLongPressCallback();</div><div class="line">                        // Need to switch from pressed to not pressed</div><div class="line">                        refreshDrawableState();</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line">                break;</div><div class="line">        &#125;</div><div class="line">        return true;</div><div class="line">    &#125;</div><div class="line">	//不是DISABLE,没有被委托的View处理，且不可点击（click 和 longclick），直接return false</div><div class="line">    return false;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="事件拦截"><a href="#事件拦截" class="headerlink" title="事件拦截"></a>事件拦截</h2><h3 id="外部拦截法"><a href="#外部拦截法" class="headerlink" title="外部拦截法"></a>外部拦截法</h3><p>在父容器的onInterceptTouchEvent中控制，一般return false，需要拦截的时候return true，一旦return true，子View就无法再接收到事件，所以在ACTION_DOWN中最好不要return true，而是在ACTION_MOVE中根据情况返回。在ACTION_UP中return false，因为它如果return true，子View就没法接收UP事件，click就会失效</p>
+<h3 id="内部拦截法"><a href="#内部拦截法" class="headerlink" title="内部拦截法"></a>内部拦截法</h3><p>子View中通过requestDisallowInterceptTouchEvent来控制父View是否拦截,这个方法调用之后，父View只是“是否允许拦截”，还要看父View的onInterceptTouchEvent，所以为了让子View可以通过这个方法去控制父View的拦截，父View应该让onInterceptTouchEvent拦截非DOWN的事件。为什么不能拦截DOWN?因为拦截之后，事件就传不到子View了，内部拦截法也就无意义了</p>
+<p>综上所述：内部拦截法稍微麻烦些（不过有时候不得不这么做），需要修改父View和子View的代码，所以一般采用外部拦截法</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/11/24/Android开发艺术（1）——Activity的生命周期和启动模式-1/" rel="next" title="Android开发艺术（1）——Activity的生命周期和启动模式">
+                <i class="fa fa-chevron-left"></i> Android开发艺术（1）——Activity的生命周期和启动模式
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">csy</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+
+          </nav>
+
+          
+
+          <div class="links-of-author motion-element">
+            
+          </div>
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#View的基础"><span class="nav-number">1.</span> <span class="nav-text">View的基础</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#View的位置参数"><span class="nav-number">1.1.</span> <span class="nav-text">View的位置参数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MotionEvent和TouchSlop"><span class="nav-number">1.2.</span> <span class="nav-text">MotionEvent和TouchSlop</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GestureDetector"><span class="nav-number">1.3.</span> <span class="nav-text">GestureDetector</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Scroller"><span class="nav-number">1.4.</span> <span class="nav-text">Scroller</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#View的滑动"><span class="nav-number">2.</span> <span class="nav-text">View的滑动</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ScrollTo-ScrollBy"><span class="nav-number">2.1.</span> <span class="nav-text">ScrollTo/ScrollBy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#三种对比"><span class="nav-number">2.2.</span> <span class="nav-text">三种对比</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#View的事件分发机制"><span class="nav-number">3.</span> <span class="nav-text">View的事件分发机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ViewGroup"><span class="nav-number">3.1.</span> <span class="nav-text">ViewGroup</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#View"><span class="nav-number">3.2.</span> <span class="nav-text">View</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#onTouchEvent"><span class="nav-number">3.3.</span> <span class="nav-text">onTouchEvent</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#事件拦截"><span class="nav-number">4.</span> <span class="nav-text">事件拦截</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#外部拦截法"><span class="nav-number">4.1.</span> <span class="nav-text">外部拦截法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#内部拦截法"><span class="nav-number">4.2.</span> <span class="nav-text">内部拦截法</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">csy</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
