@@ -336,7 +336,9 @@
 
 left/right/top/bottom表示view（view最初的状态）距离ViewGroup的左上右下的距离
 x/y 表示view（view的当前状态，平移后状态会变）的左上角的坐标，也是相对于ViewGroup的
-translationX
+translationX/translationY，表示view（view的当前状态，平移后状态会变）相对于ViewGroup的偏移量
+
+12width = right - left;x = left + translati
           ...
           <!--noindex-->
           <div class="post-button text-center">
@@ -490,7 +492,9 @@ translationX
 异常情况（由于内存不足，被系统杀掉、Configuration改变等）
 
 典型情况下的生命周期分析
-onPause不能太耗时，因为上一个Activity执行完之后 下个Activity的onCreate/onStart
+onPause不能太耗时，因为上一个Activity执行完之后 下个Activity的onCreate/onStart/onResume/onResume才能执行，所以不要在onPause中执行耗时才做，使新的Activity尽快切到前台
+
+1234567891011121314151617181920从Activi
           ...
           <!--noindex-->
           <div class="post-button text-center">
