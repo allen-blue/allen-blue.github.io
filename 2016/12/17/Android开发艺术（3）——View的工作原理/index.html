@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="View的工作流程View的工作流程，就是measure、layout和draw。measure用来测量View的宽高，layout用来确定View的位置，draw则用来绘制View。这里measure较为复杂主要分析一下，measure流程分为View的measure流程和ViewGroup的measure流程，只不过ViewGroup的measure流程除了要完成自己的测量还要遍历去调用子元素">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android开发艺术（3）——View的工作原理">
+<meta property="og:url" content="http://yoursite.com/2016/12/17/Android开发艺术（3）——View的工作原理/index.html">
+<meta property="og:site_name" content="csy&#39;s Blog">
+<meta property="og:description" content="View的工作流程View的工作流程，就是measure、layout和draw。measure用来测量View的宽高，layout用来确定View的位置，draw则用来绘制View。这里measure较为复杂主要分析一下，measure流程分为View的measure流程和ViewGroup的measure流程，只不过ViewGroup的measure流程除了要完成自己的测量还要遍历去调用子元素">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2017/10/23/23058c68a77a1ea67bacaea63d1a24e1?imageView2/0/w/1280/h/960/ignore-error/1">
+<meta property="og:updated_time" content="2017-11-19T12:31:31.676Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android开发艺术（3）——View的工作原理">
+<meta name="twitter:description" content="View的工作流程View的工作流程，就是measure、layout和draw。measure用来测量View的宽高，layout用来确定View的位置，draw则用来绘制View。这里measure较为复杂主要分析一下，measure流程分为View的measure流程和ViewGroup的measure流程，只不过ViewGroup的measure流程除了要完成自己的测量还要遍历去调用子元素">
+<meta name="twitter:image" content="https://user-gold-cdn.xitu.io/2017/10/23/23058c68a77a1ea67bacaea63d1a24e1?imageView2/0/w/1280/h/960/ignore-error/1">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/12/17/Android开发艺术（3）——View的工作原理/"/>
+
+
+
+
+
+  <title>Android开发艺术（3）——View的工作原理 | csy's Blog</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">csy's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/12/17/Android开发艺术（3）——View的工作原理/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="csy">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="csy's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Android开发艺术（3）——View的工作原理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-12-17T21:17:47+08:00">
+                2016-12-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/阅读笔记/" itemprop="url" rel="index">
+                    <span itemprop="name">阅读笔记</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o"></i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="View的工作流程"><a href="#View的工作流程" class="headerlink" title="View的工作流程"></a>View的工作流程</h2><p>View的工作流程，就是measure、layout和draw。measure用来测量View的宽高，layout用来确定View的位置，draw则用来绘制View。这里measure较为复杂主要分析一下，measure流程分为View的measure流程和ViewGroup的measure流程，只不过ViewGroup的measure流程除了要完成自己的测量还要遍历去调用子元素的measure()方法。</p>
+<h3 id="View的测量"><a href="#View的测量" class="headerlink" title="View的测量"></a>View的测量</h3><p>先来看看onMeasure()方法（View.java）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;</div><div class="line">     setMeasuredDimension(getDefaultSize(getSuggestedMinimumWidth(), widthMeasureSpec),</div><div class="line">             getDefaultSize(getSuggestedMinimumHeight(), heightMeasureSpec));</div><div class="line"> &#125;</div></pre></td></tr></table></figure>
+<p>在这之前还有个measure()方法直接调用的上面的onMeasure()方法，这里measure()呗final修饰所以无法重新所以主要看看onMeasure()里的<strong>setMeasuredDimension()</strong>方法：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">protected final void setMeasuredDimension(int measuredWidth, int measuredHeight) &#123;</div><div class="line">       boolean optical = isLayoutModeOptical(this);</div><div class="line">       if (optical != isLayoutModeOptical(mParent)) &#123;</div><div class="line">           Insets insets = getOpticalInsets();</div><div class="line">           int opticalWidth  = insets.left + insets.right;</div><div class="line">           int opticalHeight = insets.top  + insets.bottom;</div><div class="line">           measuredWidth  += optical ? opticalWidth  : -opticalWidth;</div><div class="line">           measuredHeight += optical ? opticalHeight : -opticalHeight;</div><div class="line">       &#125;</div><div class="line">       setMeasuredDimensionRaw(measuredWidth, measuredHeight);</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<p>大概意思是用来设置View的宽高的，接下来在看看<strong>getDefaultSize()</strong>方法处理了什么：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">public static int getDefaultSize(int size, int measureSpec) &#123;</div><div class="line">    int result = size;</div><div class="line">    int specMode = MeasureSpec.getMode(measureSpec);</div><div class="line">    int specSize = MeasureSpec.getSize(measureSpec);</div><div class="line">    switch (specMode) &#123;</div><div class="line">    case MeasureSpec.UNSPECIFIED:</div><div class="line">        result = size;</div><div class="line">        break;</div><div class="line">    case MeasureSpec.AT_MOST:</div><div class="line">    case MeasureSpec.EXACTLY:</div><div class="line">        result = specSize;</div><div class="line">        break;</div><div class="line">    &#125;</div><div class="line">    return result;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>specMode是View的测量模式，而specSize是View的测量大小，看到这里我们有必要先说说MeasureSpec：<br>MeasureSpec类帮助我们来测量View，它是一个32位的int值，高两位为specMode （测量的模式），低30位为specSize （测量的大小），测量模式分为三种：</p>
+<ul>
+<li><p><strong>UNSPECIFIED</strong>：未指定模式，View想多大就多大，父容器不做限制，一般用于系统内部的测量。</p>
+</li>
+<li><p><strong>AT_MOST</strong>：最大模式，对应于wrap_comtent属性，只要尺寸不超过父控件允许的最大尺寸就行。</p>
+</li>
+<li><p><strong>EXACTLY</strong>：精确模式，对应于match_parent属性和具体的数值，父容器测量出View所需要的大小，也就是specSize的值。</p>
+</li>
+</ul>
+<p>让我们回头看看getDefaultSize()方法，很显然在AT_MOST和EXACTLY模式下，都返回specSize这个值，也就是View测量后的大小，而在UNSPECIFIED模式返回的是getDefaultSize()方法的第一次个参数的值，这第一个参数从onMeasure()方法来看是getSuggestedMinimumWidth()方法和getSuggestedMinimumHeight()得到的，那我们来看看getSuggestedMinimumWidth()方法做了什么，我们只需要弄懂getSuggestedMinimumWidth()方法，因为这两个方法原理是一样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">protected int getSuggestedMinimumWidth() &#123;</div><div class="line">      return (mBackground == null) ? mMinWidth : max(mMinWidth, mBackground.getMinimumWidth());</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+<p>很明了，如果View没有设置背景则取值为mMinWidth，如果View设置了背景在取值为max(mMinWidth,mBackground.getMinimumWidth())，取值mMinWidth和mBackground.getMinimumWidth()的最大值，mMinWidth是可以设置的，它对应于android:minWidth这个属性设置的值或者View的setMinimumWidth的值，如果不指定的话则默认为0，mBackground.getMinimumWidth()，这个mBackground是Drawable类型的，看一下Drawable类的getMinimumWidth()方法（Drawable.java）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">public int getMinimumWidth() &#123;</div><div class="line">       final int intrinsicWidth = getIntrinsicWidth();</div><div class="line">       return intrinsicWidth &gt; 0 ? intrinsicWidth : 0;</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<p>intrinsicWidth得到的是这个Drawable的固有的宽度，如果固有宽度大于0则返回固有宽度，否则返回0。<br><strong>综上</strong>：getSuggestedMinimumWidth()方法就是：<strong>如果View没有设置背景则返回mMinWidth ，如果设置了背景就返回mMinWidth 和Drawable最小宽度两个值的最大值。</strong></p>
+<h3 id="ViewGroup的测量"><a href="#ViewGroup的测量" class="headerlink" title="ViewGroup的测量"></a>ViewGroup的测量</h3><p>讲完了View的measure流程，接下来看看ViewGroup的measure流程，对于ViewGroup，它不只要measure自己本身，还要遍历的调用子元素的measure()方法，ViewGroup中没有定义onMeasure()方，但他定义了measureChildren()方法，在我们自己实现onMeasure时可以调用它，也可以不调用（一般测量孩子都调用他），相当于一个模板。在线性布局、相对布局等中都有实现，稍后分析。（ViewGroup.java）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">protected void measureChildren(int widthMeasureSpec, int heightMeasureSpec) &#123;</div><div class="line">    final int size = mChildrenCount;</div><div class="line">    final View[] children = mChildren;</div><div class="line">    for (int i = 0; i &lt; size; ++i) &#123;</div><div class="line">        final View child = children[i];</div><div class="line">        if ((child.mViewFlags &amp; VISIBILITY_MASK) != GONE) &#123;</div><div class="line">            measureChild(child, widthMeasureSpec, heightMeasureSpec);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">protected void measureChild(View child, int parentWidthMeasureSpec,</div><div class="line">            int parentHeightMeasureSpec) &#123;</div><div class="line">        final LayoutParams lp = child.getLayoutParams();</div><div class="line">        final int childWidthMeasureSpec = getChildMeasureSpec(parentWidthMeasureSpec,</div><div class="line">                mPaddingLeft + mPaddingRight, lp.width);</div><div class="line">        final int childHeightMeasureSpec = getChildMeasureSpec(parentHeightMeasureSpec,</div><div class="line">                mPaddingTop + mPaddingBottom, lp.height);</div><div class="line">        child.measure(childWidthMeasureSpec, childHeightMeasureSpec);</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p>很简单，遍历孩子，调用measureChild，内部再让孩子去measure，于是就到了View的测量。这里<strong>getChildMeasureSpec()</strong>方法里写了什么呢？点击去看看：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div></pre></td><td class="code"><pre><div class="line">//三个参数分别是</div><div class="line">//1.父View的measurespec</div><div class="line">//2.父View已经占用的尺寸，也就是孩子不能使用的(这个是父View的padding+孩子的margin)</div><div class="line">//3.子view的width(MATCH_PARENT、WARP_CONTENT、具体数值)</div><div class="line">public static int getChildMeasureSpec(int spec, int padding, int childDimension) &#123;</div><div class="line">        int specMode = MeasureSpec.getMode(spec);</div><div class="line">        int specSize = MeasureSpec.getSize(spec);</div><div class="line">  		//父容器的可用尺寸(去掉了padding)，如果是负的，那就是0</div><div class="line">        int size = Math.max(0, specSize - padding);</div><div class="line">        int resultSize = 0;</div><div class="line">        int resultMode = 0;</div><div class="line">        switch (specMode) &#123;</div><div class="line">        // Parent has imposed an exact size on us</div><div class="line">        //父容器自己是精确的模式，也就是可以确定父容器的尺寸了(要嘛是具体数值，要嘛是父亲的父亲的宽度，反正是确定的)</div><div class="line">        case MeasureSpec.EXACTLY:</div><div class="line">            //孩子的尺寸是具体数值(大于等于0就是具体数值)</div><div class="line">            if (childDimension &gt;= 0) &#123;</div><div class="line">              	//如下</div><div class="line">                resultSize = childDimension;</div><div class="line">                resultMode = MeasureSpec.EXACTLY;</div><div class="line">              //孩子是MATCH_PARENT</div><div class="line">            &#125; else if (childDimension == LayoutParams.MATCH_PARENT) &#123;</div><div class="line">                // Child wants to be our size. So be it.</div><div class="line">                resultSize = size;</div><div class="line">                resultMode = MeasureSpec.EXACTLY;</div><div class="line">              </div><div class="line">              //孩子是包裹内容</div><div class="line">            &#125; else if (childDimension == LayoutParams.WRAP_CONTENT) &#123;</div><div class="line">                // Child wants to determine its own size. It can not be</div><div class="line">                // bigger than us.</div><div class="line">              //孩子是包裹内容，那么孩子的测量模式就是AT_MOST,并且此时size的含义就是孩子最大可能的尺寸，而不是孩子的具体尺寸了</div><div class="line">                resultSize = size;</div><div class="line">                resultMode = MeasureSpec.AT_MOST;</div><div class="line">            &#125;</div><div class="line">            break;</div><div class="line">        // Parent has imposed a maximum size on us</div><div class="line">            //父亲是AT_MOST,说明父亲的尺寸不确定，但是父亲最大不能超过某个数值，这个数值是已知了</div><div class="line">        case MeasureSpec.AT_MOST:</div><div class="line">            //孩子是具体数值，那孩子就像下面那样，精确模式、具体尺寸</div><div class="line">            if (childDimension &gt;= 0) &#123;</div><div class="line">                // Child wants a specific size... so be it</div><div class="line">                resultSize = childDimension;</div><div class="line">                resultMode = MeasureSpec.EXACTLY;</div><div class="line">              //孩子是MATCH_PARENT，那么孩子不是精确的，但是孩子可以确定他最大尺寸，那就是父亲的最大尺寸，模式是AT_MOST</div><div class="line">            &#125; else if (childDimension == LayoutParams.MATCH_PARENT) &#123;</div><div class="line">                // Child wants to be our size, but our size is not fixed.</div><div class="line">                // Constrain child to not be bigger than us.</div><div class="line">                resultSize = size;</div><div class="line">                resultMode = MeasureSpec.AT_MOST;</div><div class="line">              //孩子是包裹内容，那么孩子的尺寸也是不可以定的，但是最大值是知道的，不能超过父亲的最大尺寸，如下。。</div><div class="line">            &#125; else if (childDimension == LayoutParams.WRAP_CONTENT) &#123;</div><div class="line">                // Child wants to determine its own size. It can not be</div><div class="line">                // bigger than us.</div><div class="line">                resultSize = size;</div><div class="line">                resultMode = MeasureSpec.AT_MOST;</div><div class="line">            &#125;</div><div class="line">            break;</div><div class="line">        // Parent asked to see how big we want to be</div><div class="line">        case MeasureSpec.UNSPECIFIED:</div><div class="line">            //这种情况</div><div class="line">            break;</div><div class="line">        &#125;</div><div class="line">        //noinspection ResourceType</div><div class="line">        return MeasureSpec.makeMeasureSpec(resultSize, resultMode);</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p>很显然这是根据父容器的MeasureSpec的模式再结合子元素的LayoutParams属性来得出子元素的MeasureSpec属性。</p>
+<h3 id="LinearLayout的measure流程"><a href="#LinearLayout的measure流程" class="headerlink" title="LinearLayout的measure流程"></a>LinearLayout的measure流程</h3><p>ViewGroup并没有提供onMeasure()方法，而是让其子类来各自实现测量的方法，究其原因就是ViewGroup有不同的布局的需要很难统一，接下来我们来简单分析一下ViewGroup的子类LinearLayout的measure流程，先来看看它的onMeasure()方法（LinearLayout.java）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">@Override</div><div class="line">   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;</div><div class="line">       if (mOrientation == VERTICAL) &#123;</div><div class="line">           measureVertical(widthMeasureSpec, heightMeasureSpec);</div><div class="line">       &#125; else &#123;</div><div class="line">           measureHorizontal(widthMeasureSpec, heightMeasureSpec);</div><div class="line">       &#125;</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<p>两个方法实现大同小异，这里看下垂直measureVertical()方法的部分源码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div></pre></td><td class="code"><pre><div class="line">void measureVertical(int widthMeasureSpec, int heightMeasureSpec) &#123;</div><div class="line">        mTotalLength = 0;</div><div class="line">     mTotalLength = 0;       </div><div class="line"> ...</div><div class="line">  for (int i = 0; i &lt; count; ++i) &#123;</div><div class="line">            final View child = getVirtualChildAt(i);</div><div class="line">            if (child == null) &#123;</div><div class="line">                mTotalLength += measureNullChild(i);</div><div class="line">                continue;</div><div class="line">            &#125;</div><div class="line">            if (child.getVisibility() == View.GONE) &#123;</div><div class="line">               i += getChildrenSkipCount(child, i);</div><div class="line">               continue;</div><div class="line">            &#125;</div><div class="line">            if (hasDividerBeforeChildAt(i)) &#123;</div><div class="line">                mTotalLength += mDividerHeight;</div><div class="line">            &#125;</div><div class="line">            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) child.getLayoutParams();</div><div class="line">            totalWeight += lp.weight;</div><div class="line">            </div><div class="line">            if (heightMode == MeasureSpec.EXACTLY &amp;&amp; lp.height == 0 &amp;&amp; lp.weight &gt; 0) &#123;</div><div class="line">                // Optimization: don not bother measuring children who are going to use</div><div class="line">                // leftover space. These views will get measured again down below if</div><div class="line">                // there is any leftover space.</div><div class="line">                final int totalLength = mTotalLength;</div><div class="line">                mTotalLength = Math.max(totalLength, totalLength + lp.topMargin + lp.bottomMargin);</div><div class="line">                skippedMeasure = true;</div><div class="line">            &#125; else &#123;</div><div class="line">                int oldHeight = Integer.MIN_VALUE;</div><div class="line">                if (lp.height == 0 &amp;&amp; lp.weight &gt; 0) &#123;</div><div class="line">                    // heightMode is either UNSPECIFIED or AT_MOST, and this</div><div class="line">                    // child wanted to stretch to fill available space.</div><div class="line">                    // Translate that to WRAP_CONTENT so that it does not end up</div><div class="line">                    // with a height of 0</div><div class="line">                    oldHeight = 0;</div><div class="line">                    lp.height = LayoutParams.WRAP_CONTENT;</div><div class="line">                &#125;</div><div class="line">                // Determine how big this child would like to be. If this or</div><div class="line">                // previous children have given a weight, then we allow it to</div><div class="line">                // use all available space (and we will shrink things later</div><div class="line">                // if needed).</div><div class="line">                measureChildBeforeLayout(</div><div class="line">                       child, i, widthMeasureSpec, 0, heightMeasureSpec,</div><div class="line">                       totalWeight == 0 ? mTotalLength : 0);</div><div class="line">                if (oldHeight != Integer.MIN_VALUE) &#123;</div><div class="line">                   lp.height = oldHeight;</div><div class="line">                &#125;</div><div class="line">                final int childHeight = child.getMeasuredHeight();</div><div class="line">                final int totalLength = mTotalLength;</div><div class="line">                mTotalLength = Math.max(totalLength, totalLength + childHeight + lp.topMargin +</div><div class="line">                       lp.bottomMargin + getNextLocationOffset(child));</div><div class="line">...</div><div class="line">        if (useLargestChild &amp;&amp;</div><div class="line">                (heightMode == MeasureSpec.AT_MOST || heightMode == MeasureSpec.UNSPECIFIED)) &#123;</div><div class="line">            mTotalLength = 0;</div><div class="line">            for (int i = 0; i &lt; count; ++i) &#123;</div><div class="line">                final View child = getVirtualChildAt(i);</div><div class="line">                if (child == null) &#123;</div><div class="line">                    mTotalLength += measureNullChild(i);</div><div class="line">                    continue;</div><div class="line">                &#125;</div><div class="line">                if (child.getVisibility() == GONE) &#123;</div><div class="line">                    i += getChildrenSkipCount(child, i);</div><div class="line">                    continue;</div><div class="line">                &#125;</div><div class="line">                final LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)</div><div class="line">                        child.getLayoutParams();</div><div class="line">                // Account for negative margins</div><div class="line">                final int totalLength = mTotalLength;</div><div class="line">                mTotalLength = Math.max(totalLength, totalLength + largestChildHeight +</div><div class="line">                        lp.topMargin + lp.bottomMargin + getNextLocationOffset(child));</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        // Add in our padding</div><div class="line">        mTotalLength += mPaddingTop + mPaddingBottom;</div><div class="line">        int heightSize = mTotalLength;</div><div class="line">        // Check against our minimum height</div></pre></td></tr></table></figure>
+<p>大致意思就是定义了mTotalLength用来存储LinearLayout在垂直方向的高度，然后遍历子元素，根据子元素的MeasureSpec模式分别计算每个子元素的高度，如果是wrap_content则将每个子元素的高度和margin垂直高度等值相加并赋值给mTotalLength得出整个LinearLayout的高度。如果布局高度设置为match_parent者具体数值则和View的测量方法一样。</p>
+<h3 id="Layout"><a href="#Layout" class="headerlink" title="Layout"></a>Layout</h3><p>layout方法用来决定View自身的位置,在layout中调用了onLayout方法，这个方法没有具体的实现，需要子类自己实现，主要是为了决定子View的位置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line">public void layout(int l, int t, int r, int b) &#123;</div><div class="line">    int oldL = mLeft;</div><div class="line">    int oldT = mTop;</div><div class="line">    int oldB = mBottom;</div><div class="line">    int oldR = mRight;</div><div class="line">  //设置自身的位置</div><div class="line">    boolean changed = setFrame(l, t, r, b);</div><div class="line">    if (changed || (mPrivateFlags &amp; LAYOUT_REQUIRED) == LAYOUT_REQUIRED) &#123;</div><div class="line">        if (ViewDebug.TRACE_HIERARCHY) &#123;</div><div class="line">            ViewDebug.trace(this, ViewDebug.HierarchyTraceType.ON_LAYOUT);</div><div class="line">        &#125;</div><div class="line">		//调用onLayout，具体的实现都不一样</div><div class="line">        onLayout(changed, l, t, r, b);</div><div class="line">        mPrivateFlags &amp;= ~LAYOUT_REQUIRED;</div><div class="line">        if (mOnLayoutChangeListeners != null) &#123;</div><div class="line">            ArrayList&lt;OnLayoutChangeListener&gt; listenersCopy =</div><div class="line">                    (ArrayList&lt;OnLayoutChangeListener&gt;) mOnLayoutChangeListeners.clone();</div><div class="line">            int numListeners = listenersCopy.size();</div><div class="line">            for (int i = 0; i &lt; numListeners; ++i) &#123;</div><div class="line">                listenersCopy.get(i).onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    mPrivateFlags &amp;= ~FORCE_LAYOUT;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>在Linearlayout中，onLayout中主要就是遍历孩子，然后调用setChildFrame方法，这个方法内部就是调用child的layout方法，所以又回到了上面那一步。</p>
+<h3 id="Draw"><a href="#Draw" class="headerlink" title="Draw"></a>Draw</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div></pre></td><td class="code"><pre><div class="line">public void draw(Canvas canvas) &#123;</div><div class="line">  </div><div class="line">    /*</div><div class="line">     * Draw traversal performs several drawing steps which must be executed</div><div class="line">     * in the appropriate order:</div><div class="line">     *</div><div class="line">     *      1. Draw the background</div><div class="line">     *      2. If necessary, save the canvas&apos; layers to prepare for fading</div><div class="line">     *      3. Draw view&apos;s content</div><div class="line">     *      4. Draw children</div><div class="line">     *      5. If necessary, draw the fading edges and restore layers</div><div class="line">     *      6. Draw decorations (scrollbars for instance)</div><div class="line">     */</div><div class="line">    // Step 1, draw the background, if needed</div><div class="line">   </div><div class="line">    // skip step 2 &amp; 5 if possible (common case)</div><div class="line">    final int viewFlags = mViewFlags;</div><div class="line">    boolean horizontalEdges = (viewFlags &amp; FADING_EDGE_HORIZONTAL) != 0;</div><div class="line">    boolean verticalEdges = (viewFlags &amp; FADING_EDGE_VERTICAL) != 0;</div><div class="line">    if (!verticalEdges &amp;&amp; !horizontalEdges) &#123;</div><div class="line">        // Step 3, draw the content</div><div class="line">        if (!dirtyOpaque) onDraw(canvas);</div><div class="line">        // Step 4, draw the children</div><div class="line">        dispatchDraw(canvas);</div><div class="line">        // Step 6, draw decorations (scrollbars)</div><div class="line">        onDrawScrollBars(canvas);</div><div class="line">        // we&apos;re done...</div><div class="line">        return;</div><div class="line">    &#125;</div><div class="line">   </div><div class="line">    // Step 2, save the canvas&apos; layers</div><div class="line">   </div><div class="line">    // Step 3, draw the content</div><div class="line">    if (!dirtyOpaque) onDraw(canvas);</div><div class="line">    // Step 4, draw the children</div><div class="line">    dispatchDraw(canvas);</div><div class="line">    // Step 5, draw the fade effect and restore layers</div><div class="line">   </div><div class="line">    // Step 6, draw decorations (scrollbars)</div><div class="line">    onDrawScrollBars(canvas);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>看注释可知，View的draw过程主要有以下几步：</p>
+<ul>
+<li><p>画背景</p>
+</li>
+<li><p>画内容</p>
+</li>
+<li><p>画孩子</p>
+</li>
+<li><p>画装饰</p>
+</li>
+</ul>
+<p>draw是通过dispatchDraw将绘画分发给孩子的</p>
+<p>有个方法是setWillNotDraw()，可以设置当前view不绘制内容，一般继承自ViewGroup，并且确保自身不需要绘制，就设为true，可以优化。默认为false。</p>
+<h2 id="自定义view"><a href="#自定义view" class="headerlink" title="自定义view"></a>自定义view</h2><p>自定义view这块就大概说一下注意事项，具体不展开。如果你想深入了解这里<strong>强烈推荐一下凯哥的自定义View系列</strong> <a href="https://juejin.im/post/59591e42f265da6c407350c0" target="_blank" rel="external">HenCoder：给高级 Android 工程师的进阶手册</a>，如果还没看过你就out了， <strong>良心巨作</strong>，现在好像都开始着手准备国际化了推向国外了，凯哥(扔物线）的“关注我就能达到大师级水平，这话我终于敢说了”可不是盖的。</p>
+<ul>
+<li><p>继承自View的自定义View</p>
+<p>在onMeasure中处理wrap_parent<br>在onDraw中处理padding<br>自定义xml属性，文件名字不一定要交attrs。自定义属性获取完数据之后记得调用recycle。继承自ViewGroup的自定义View</p>
+</li>
+</ul>
+<ul>
+<li>在onMeasure中调用measureChildren测量孩子（也可以自己写逻辑），然后分析自己的measurespec，最后调用setMeasuredDimension<br>onLayout中根据测量宽高，遍历孩子，为其布局。</li>
+</ul>
+<p>这里最后放一张<a href="https://juejin.im/post/59591e42f265da6c407350c0" target="_blank" rel="external">HenCoder：给高级 Android 工程师的进阶手册</a>的微信公众号的图片，感谢大神的无私奉献~~~</p>
+<p><img src="https://user-gold-cdn.xitu.io/2017/10/23/23058c68a77a1ea67bacaea63d1a24e1?imageView2/0/w/1280/h/960/ignore-error/1" alt=""></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/12/03/Android开发艺术（2）——View的事件体系/" rel="next" title="Android开发艺术（2）——View的事件体系">
+                <i class="fa fa-chevron-left"></i> Android开发艺术（2）——View的事件体系
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/31/JAVA多线程（1）——-死锁/" rel="prev" title="JAVA多线程（1）—— 死锁">
+                JAVA多线程（1）—— 死锁 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">csy</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+
+          </nav>
+
+          
+
+          <div class="links-of-author motion-element">
+            
+          </div>
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#View的工作流程"><span class="nav-number">1.</span> <span class="nav-text">View的工作流程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#View的测量"><span class="nav-number">1.1.</span> <span class="nav-text">View的测量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ViewGroup的测量"><span class="nav-number">1.2.</span> <span class="nav-text">ViewGroup的测量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LinearLayout的measure流程"><span class="nav-number">1.3.</span> <span class="nav-text">LinearLayout的measure流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Layout"><span class="nav-number">1.4.</span> <span class="nav-text">Layout</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Draw"><span class="nav-number">1.5.</span> <span class="nav-text">Draw</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义view"><span class="nav-number">2.</span> <span class="nav-text">自定义view</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">csy</span>
+
+  
+</div>
+
+
+
+
+
+<div class="powered-by">
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+&mdash;
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user"> 访问人数</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      人次
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"> 总访问量</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
